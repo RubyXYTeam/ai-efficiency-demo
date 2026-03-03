@@ -72,7 +72,7 @@ export default function WorkbenchPage() {
           <Card
             title="WF‑04+ 客户业务理解（1分钟清单）"
             desc="输入客户名+部门 → 输出“必问十问/决策链路/价值映射/未知项”。默认 Markdown，一键复制。"
-            href="#"
+            href="/employee/workbench/wf04"
             badge="Text"
           />
         </div>

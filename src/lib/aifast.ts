@@ -1,0 +1,78 @@
+type ChatCompletionReq = {
+  model: string;
+  messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
+};
+
+export async function aifastChatCompletion(
+  messages: ChatCompletionReq["messages"],
+  model?: string
+) {
+  const baseUrl = process.env.AIFAST_BASE_URL;
+  const apiKey = process.env.AIFAST_API_KEY;
+  const m = model || process.env.AIFAST_TEXT_MODEL;
+
+  if (!baseUrl) throw new Error("AIFAST_BASE_URL missing");
+  if (!apiKey) throw new Error("AIFAST_API_KEY missing");
+  if (!m) throw new Error("AIFAST_TEXT_MODEL missing");
+
+  const body: ChatCompletionReq = {
+    model: m,
+    messages,
+  };
+
+  const res = await fetch(`${baseUrl}/v1/chat/completions`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`aifast chat error ${res.status}: ${text.slice(0, 500)}`);
+  }
+
+  return JSON.parse(text);
+}
+
+export async function aifastImageFromPrompt(prompt: string, model?: string) {
+  const baseUrl = process.env.AIFAST_BASE_URL;
+  const apiKey = process.env.AIFAST_API_KEY;
+  const m = model || process.env.AIFAST_IMAGE_MODEL;
+
+  if (!baseUrl) throw new Error("AIFAST_BASE_URL missing");
+  if (!apiKey) throw new Error("AIFAST_API_KEY missing");
+  if (!m) throw new Error("AIFAST_IMAGE_MODEL missing");
+
+  const body = {
+    model: m,
+    messages: [
+      {
+        role: "user",
+        content: `Create an image: ${prompt}`,
+      },
+    ],
+  };
+
+  const res = await fetch(`${baseUrl}/v1/chat/completions`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  const raw = await res.text();
+  if (!res.ok) {
+    throw new Error(`aifast image error ${res.status}: ${raw.slice(0, 500)}`);
+  }
+
+  const j = JSON.parse(raw);
+  const content: string = j?.choices?.[0]?.message?.content || "";
+  const m0 = content.match(/data:image\/png;base64,([A-Za-z0-9+/=]+)/);
+  if (!m0) throw new Error("No base64 png found in response");
+  return Buffer.from(m0[1], "base64");
+}
