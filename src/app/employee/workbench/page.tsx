@@ -60,7 +60,7 @@ export default function WorkbenchPage() {
           <Card
             title="WF‑01 一键出商品详情图"
             desc="同一份产品信息，一键生成 T1/T2/T3 三套风格（主图/四宫格/卖点页）。"
-            href="#"
+            href="/employee/workbench/wf01"
             badge="Image"
           />
           <Card
