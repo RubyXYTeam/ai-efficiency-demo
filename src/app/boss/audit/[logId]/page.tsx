@@ -64,6 +64,21 @@ export default async function BossAuditDetailPage({
             <div className="mt-2 text-xl font-bold">{a.risky ? "⚠" : "OK"}</div>
           </div>
         </div>
+
+        <div className="mt-4 rounded-2xl border border-slate-700/60 bg-slate-900/30 p-5">
+          <div className="text-xs text-slate-400">DLP 命中（强脱敏）</div>
+          {a.dlpHits?.length ? (
+            <ul className="mt-2 list-disc pl-5 text-sm text-slate-100 space-y-1">
+              {a.dlpHits.map((h: any, idx: number) => (
+                <li key={idx}>
+                  <span className="font-semibold">[{h.severity}]</span> {h.ruleName}（pattern: {h.pattern}）
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="mt-2 text-sm text-slate-400">无命中</div>
+          )}
+        </div>
       </div>
     </div>
   );

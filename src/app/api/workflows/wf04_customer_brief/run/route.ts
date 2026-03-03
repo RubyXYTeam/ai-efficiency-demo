@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { aifastChatCompletion } from "@/lib/aifast";
 import { addAudit, createRun, getCustomerAlias, updateRun } from "@/lib/store";
+import { dlpScan } from "@/lib/dlp";
 
 export const runtime = "nodejs";
 
@@ -51,6 +52,9 @@ export async function POST(req: Request) {
 
     const outputSummary = summarize(md, 200);
 
+    const hits = dlpScan([body.customer_name, body.customer_dept, body.visit_role, body.our_offer_one_liner, body.known_facts, body.constraints, md].filter(Boolean).join("\n\n"));
+    const risky = hits.some((h) => h.severity === "high") || hits.length >= 3;
+
     const audit = addAudit({
       workflowId: "wf04_customer_brief",
       dept: "销售部",
@@ -60,7 +64,8 @@ export async function POST(req: Request) {
       inputSummary,
       outputSummary,
       customerAlias: alias,
-      risky: false,
+      risky,
+      dlpHits: hits,
     });
 
     updateRun(run.id, {

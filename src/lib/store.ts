@@ -16,6 +16,7 @@ export type AuditLog = {
   outputSummary: string;
   customerAlias: string;
   risky: boolean;
+  dlpHits?: Array<{ ruleId: string; ruleName: string; severity: string; pattern: string }>;
 };
 
 export type RunRecord = {
