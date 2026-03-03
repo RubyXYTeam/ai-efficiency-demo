@@ -1,4 +1,6 @@
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, rgb } from "pdf-lib";
+import fontkit from "@pdf-lib/fontkit";
+import fs from "fs";
 
 export type Wf02Input = {
   title: string;
@@ -24,8 +26,32 @@ function wrapText(text: string, maxLen = 26) {
 
 export async function buildWf02Pdf(input: Wf02Input) {
   const pdf = await PDFDocument.create();
-  const font = await pdf.embedFont(StandardFonts.Helvetica);
-  const fontBold = await pdf.embedFont(StandardFonts.HelveticaBold);
+  pdf.registerFontkit(fontkit);
+
+  // Use a CJK-capable font to avoid WinAnsi encoding errors for Chinese.
+  // Prefer PingFang; fallback to STHeiti.
+  const candidates = [
+    "/System/Library/Fonts/PingFang.ttc",
+    "/System/Library/Fonts/STHeiti Medium.ttc",
+    "/System/Library/Fonts/STHeiti Light.ttc",
+  ];
+
+  let fontBytes: Buffer | null = null;
+  for (const p of candidates) {
+    try {
+      if (fs.existsSync(p)) {
+        fontBytes = fs.readFileSync(p);
+        break;
+      }
+    } catch {
+      // ignore
+    }
+  }
+  if (!fontBytes) throw new Error("No CJK font file found on system");
+
+  // Note: .ttc font collections are supported via fontkit integration.
+  const font = await pdf.embedFont(fontBytes, { subset: true });
+  const fontBold = font;
 
   const W = 595.28; // A4 width (pt)
   const H = 841.89; // A4 height
