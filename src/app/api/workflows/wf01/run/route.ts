@@ -24,8 +24,12 @@ export async function POST(req: Request) {
   const quality = body.qualityPreset || "standard";
   const templateIds = body.templateIds?.length ? body.templateIds : (["T1", "T2", "T3"] as const);
 
-  // Demo product text (later: mock products)
-  const compliance = "提示：效果因地力与管理方式不同存在差异，使用请以产品说明为准。";
+  // Demo product text (from Console mock products)
+  const { getProduct } = await import("@/lib/products");
+  const p = getProduct("p_liquid_fert_20kg");
+  const compliance =
+    p?.compliance ||
+    "提示：效果因地力与管理方式不同存在差异，使用请以产品说明为准。";
 
   // Prompts – HQ adds extra photographic details.
   const q = quality === "hq" ? "premium commercial photography, cinematic lighting, high detail, clean composition, 4k" : "realistic documentary photo, clean composition";
@@ -61,20 +65,27 @@ export async function POST(req: Request) {
 
   // 2) Render templates
   const text = {
-    title: "液体肥 · 核心卖点",
-    subtitle: `（${quality}）一键生成多风格详情物料`,
-    bullets: [
-      "促根壮苗，缓苗更快",
-      "提升吸收效率，长势更稳",
-      "适用多作物场景（按说明使用）",
-      "标准/高质档位可切换",
-    ],
+    title: p?.name || "液体肥 · 核心卖点",
+    subtitle: p?.subtitle ? `${p.subtitle}（${quality}）` : `（${quality}）一键生成多风格详情物料`,
+    bullets: p?.bullets?.length
+      ? p.bullets
+      : [
+          "促根壮苗，缓苗更快",
+          "提升吸收效率，长势更稳",
+          "适用多作物场景（按说明使用）",
+          "标准/高质档位可切换",
+        ],
     compliance,
   };
 
   const gridText = {
     heading: "适用作物 / 场景",
-    items: ["玉米", "小麦", "柑橘", "番茄大棚"] as [string, string, string, string],
+    items: (p?.gridLabels || ["玉米", "小麦", "柑橘", "番茄大棚"]) as [
+      string,
+      string,
+      string,
+      string,
+    ],
     compliance,
   };
 
