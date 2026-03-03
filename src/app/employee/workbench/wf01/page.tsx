@@ -1,12 +1,35 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+type Product = {
+  id: string;
+  name: string;
+};
 
 export default function Wf01Page() {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any>(null);
   const [err, setErr] = useState<string | null>(null);
+
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productId, setProductId] = useState<string>("p_liquid_fert_20kg");
+
+  const activeName = useMemo(
+    () => products.find((p) => p.id === productId)?.name,
+    [products, productId]
+  );
+
+  useEffect(() => {
+    (async () => {
+      const res = await fetch("/api/console/products");
+      const j = await res.json();
+      const list = (j.products || []).map((p: any) => ({ id: p.id, name: p.name }));
+      setProducts(list);
+      if (list?.[0]?.id) setProductId(list[0].id);
+    })();
+  }, []);
 
   const [quality, setQuality] = useState<"standard" | "hq">("standard");
 
@@ -17,7 +40,11 @@ export default function Wf01Page() {
       const res = await fetch("/api/workflows/wf01/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId: "p_liquid_fert_20kg", qualityPreset: quality, templateIds: ["T1", "T2", "T3"] }),
+        body: JSON.stringify({
+          productId,
+          qualityPreset: quality,
+          templateIds: ["T1", "T2", "T3"],
+        }),
       });
       const j = await res.json();
       if (!res.ok) throw new Error(j?.error || `HTTP ${res.status}`);
@@ -55,6 +82,22 @@ export default function Wf01Page() {
         </div>
 
         <div className="mt-6 flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 text-xs text-slate-300">
+            <span>产品：</span>
+            <select
+              value={productId}
+              onChange={(e) => setProductId(e.target.value)}
+              className="rounded-lg border border-slate-700 bg-slate-950/20 px-2.5 py-2 text-xs"
+            >
+              {products.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+            <span className="text-slate-500">{activeName ? `(${activeName})` : ""}</span>
+          </div>
+
           <div className="flex items-center gap-2 text-xs text-slate-300">
             <span>档位：</span>
             <button
