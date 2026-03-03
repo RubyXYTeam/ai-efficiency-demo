@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 
-export type WorkflowId = "wf04_customer_brief";
+export type WorkflowId = "wf01_product_images" | "wf02_catalog_pdf" | "wf04_customer_brief";
 
 export type RunStatus = "queued" | "running" | "succeeded" | "failed";
 

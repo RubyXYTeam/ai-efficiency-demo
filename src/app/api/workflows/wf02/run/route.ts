@@ -3,6 +3,8 @@ import fs from "fs";
 import path from "path";
 import { buildWf02Pdf } from "@/lib/pdf/wf02";
 import { getProduct } from "@/lib/products";
+import { addAudit } from "@/lib/store";
+import { dlpScan } from "@/lib/dlp";
 
 export const runtime = "nodejs";
 
@@ -42,8 +44,30 @@ export async function POST(req: Request) {
   const fileName = "catalog.pdf";
   fs.writeFileSync(path.join(outBase, fileName), pdfBuf);
 
+  const hits = dlpScan(
+    [p.name, p.subtitle, p.bullets.join("\n"), p.gridLabels.join("\n"), p.compliance]
+      .filter(Boolean)
+      .join("\n\n")
+  );
+  const risky = hits.some((h) => h.severity === "high") || hits.length >= 3;
+
+  const url = `/artifacts/wf02/${path.basename(outBase)}/${fileName}`;
+
+  addAudit({
+    workflowId: "wf02_catalog_pdf",
+    dept: "市场部",
+    actor: "demo-user",
+    qualityPreset: "standard",
+    costCny: 1.2,
+    inputSummary: `${p.name}｜画册PDF（6页）`,
+    outputSummary: `产物：catalog.pdf`,
+    customerAlias: "内部",
+    risky,
+    dlpHits: hits,
+  });
+
   return NextResponse.json({
     ok: true,
-    url: `/artifacts/wf02/${path.basename(outBase)}/${fileName}`,
+    url,
   });
 }

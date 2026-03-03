@@ -3,6 +3,8 @@ import fs from "fs";
 import path from "path";
 import { aifastImageFromPrompt } from "@/lib/aifast";
 import { renderBenefits, renderGrid4 } from "@/lib/render-wf01";
+import { addAudit } from "@/lib/store";
+import { dlpScan } from "@/lib/dlp";
 
 export const runtime = "nodejs";
 
@@ -22,7 +24,9 @@ function nowId() {
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as Req;
   const quality = body.qualityPreset || "standard";
-  const templateIds = body.templateIds?.length ? body.templateIds : (["T1", "T2", "T3"] as const);
+  const templateIds = body.templateIds?.length
+    ? body.templateIds
+    : (["T1", "T2", "T3"] as const);
 
   // Demo product text (from Console mock products)
   const { getProduct } = await import("@/lib/products");
@@ -106,10 +110,42 @@ export async function POST(req: Request) {
     });
   }
 
+  const baseUrl = `/artifacts/wf01/${path.basename(outBase)}/`;
+
+  // DLP scan over config + prompts (demo)
+  const hits = dlpScan(
+    [
+      p?.name,
+      p?.subtitle,
+      (p?.bullets || []).join("\n"),
+      (p?.gridLabels || []).join("\n"),
+      compliance,
+      ...Object.values(prompts),
+    ]
+      .filter(Boolean)
+      .join("\n\n")
+  );
+  const risky = hits.some((h) => h.severity === "high") || hits.length >= 3;
+
+  addAudit({
+    workflowId: "wf01_product_images",
+    dept: "电商运营",
+    actor: "demo-user",
+    qualityPreset: quality,
+    costCny: quality === "hq" ? 8.0 : 4.0,
+    inputSummary: `${p?.name || "产品"}｜模板：${templateIds.join(",")}｜档位：${quality}`,
+    outputSummary: `产物：${outputs
+      .map((o) => `${o.templateId}(grid4+benefits)`)
+      .join(" ")}`,
+    customerAlias: "内部",
+    risky,
+    dlpHits: hits,
+  });
+
   return NextResponse.json({
     ok: true,
     quality,
-    base: `/artifacts/wf01/${path.basename(outBase)}/`,
+    base: baseUrl,
     outputs,
   });
 }
