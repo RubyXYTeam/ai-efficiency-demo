@@ -50,7 +50,7 @@ export async function buildWf02Pdf(input: Wf02Input) {
   if (!fontBytes) throw new Error("No CJK font file found on system");
 
   // Note: .ttc font collections are supported via fontkit integration.
-  const font = await pdf.embedFont(fontBytes, { subset: true });
+  const font = await pdf.embedFont(fontBytes, { subset: false });
   const fontBold = font;
 
   const W = 595.28; // A4 width (pt)
