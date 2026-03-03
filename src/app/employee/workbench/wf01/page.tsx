@@ -8,11 +8,17 @@ export default function Wf01Page() {
   const [data, setData] = useState<any>(null);
   const [err, setErr] = useState<string | null>(null);
 
+  const [quality, setQuality] = useState<"standard" | "hq">("standard");
+
   async function run() {
     setLoading(true);
     setErr(null);
     try {
-      const res = await fetch("/api/workflows/wf01/render", { method: "POST" });
+      const res = await fetch("/api/workflows/wf01/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ qualityPreset: quality, templateIds: ["T1", "T2", "T3"] }),
+      });
       const j = await res.json();
       if (!res.ok) throw new Error(j?.error || `HTTP ${res.status}`);
       setData(j);
@@ -48,7 +54,31 @@ export default function Wf01Page() {
           </div>
         </div>
 
-        <div className="mt-6 flex items-center gap-3">
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 text-xs text-slate-300">
+            <span>档位：</span>
+            <button
+              onClick={() => setQuality("standard")}
+              className={`rounded-lg border px-2.5 py-1.5 transition ${
+                quality === "standard"
+                  ? "border-slate-300 bg-slate-100 text-slate-900"
+                  : "border-slate-700 bg-transparent text-slate-200 hover:border-slate-400"
+              }`}
+            >
+              标准
+            </button>
+            <button
+              onClick={() => setQuality("hq")}
+              className={`rounded-lg border px-2.5 py-1.5 transition ${
+                quality === "hq"
+                  ? "border-slate-300 bg-slate-100 text-slate-900"
+                  : "border-slate-700 bg-transparent text-slate-200 hover:border-slate-400"
+              }`}
+            >
+              高质
+            </button>
+          </div>
+
           <button
             disabled={loading}
             onClick={run}
@@ -56,10 +86,11 @@ export default function Wf01Page() {
           >
             {loading ? "生成中…" : "生成成品图"}
           </button>
+
           {err ? (
             <div className="text-xs text-red-200">失败：{err}</div>
           ) : (
-            <div className="text-xs text-slate-400">输出目录：/public/artifacts/wf01/</div>
+            <div className="text-xs text-slate-400">输出目录：/public/artifacts/wf01/（按次生成）</div>
           )}
         </div>
 
