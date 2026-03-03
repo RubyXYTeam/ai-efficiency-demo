@@ -47,7 +47,7 @@ export default function LoginPage() {
           <RoleCard
             title="顾问端（Console）"
             desc="模板库 / DLP 规则 / Mock 产品库（Demo 版配置后台）。"
-            href="/console/mock-products"
+            href="/console"
           />
         </div>
 

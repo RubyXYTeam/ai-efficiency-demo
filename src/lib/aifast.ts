@@ -56,23 +56,42 @@ export async function aifastImageFromPrompt(prompt: string, model?: string) {
     ],
   };
 
-  const res = await fetch(`${baseUrl}/v1/chat/completions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
+  const maxAttempts = 3;
+  let lastErr: any = null;
 
-  const raw = await res.text();
-  if (!res.ok) {
-    throw new Error(`aifast image error ${res.status}: ${raw.slice(0, 500)}`);
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), 120000); // 120s timeout
+
+    try {
+      const res = await fetch(`${baseUrl}/v1/chat/completions`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+
+      const raw = await res.text();
+      if (!res.ok) {
+        throw new Error(`aifast image error ${res.status}: ${raw.slice(0, 500)}`);
+      }
+
+      const j = JSON.parse(raw);
+      const content: string = j?.choices?.[0]?.message?.content || "";
+      const m0 = content.match(/data:image\/png;base64,([A-Za-z0-9+/=]+)/);
+      if (!m0) throw new Error("No base64 png found in response");
+      return Buffer.from(m0[1], "base64");
+    } catch (e: any) {
+      lastErr = e;
+      // small backoff
+      await new Promise((r) => setTimeout(r, 600 * attempt));
+    } finally {
+      clearTimeout(t);
+    }
   }
 
-  const j = JSON.parse(raw);
-  const content: string = j?.choices?.[0]?.message?.content || "";
-  const m0 = content.match(/data:image\/png;base64,([A-Za-z0-9+/=]+)/);
-  if (!m0) throw new Error("No base64 png found in response");
-  return Buffer.from(m0[1], "base64");
+  throw lastErr || new Error("aifast image failed");
 }
