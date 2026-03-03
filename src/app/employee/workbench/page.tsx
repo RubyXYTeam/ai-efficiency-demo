@@ -66,7 +66,7 @@ export default function WorkbenchPage() {
           <Card
             title="WF‑02 产品画册（PDF）"
             desc="6页固定结构：封面/概览/卖点/场景/注意事项/话术页。先只做PDF。"
-            href="#"
+            href="/employee/workbench/wf02"
             badge="PDF"
           />
           <Card
