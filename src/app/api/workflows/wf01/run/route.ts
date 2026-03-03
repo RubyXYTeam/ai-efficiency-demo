@@ -9,6 +9,7 @@ import { dlpScan } from "@/lib/dlp";
 export const runtime = "nodejs";
 
 type Req = {
+  productId?: string;
   qualityPreset?: "standard" | "hq";
   templateIds?: Array<"T1" | "T2" | "T3">;
 };
@@ -30,20 +31,33 @@ export async function POST(req: Request) {
 
   // Demo product text (from Console mock products)
   const { getProduct } = await import("@/lib/products");
-  const p = getProduct("p_liquid_fert_20kg");
+  const pid = body.productId || "p_liquid_fert_20kg";
+  const p = getProduct(pid);
   const compliance =
     p?.compliance ||
     "提示：效果因地力与管理方式不同存在差异，使用请以产品说明为准。";
 
   // Prompts – HQ adds extra photographic details.
-  const q = quality === "hq" ? "premium commercial photography, cinematic lighting, high detail, clean composition, 4k" : "realistic documentary photo, clean composition";
+  const q =
+    quality === "hq"
+      ? "premium commercial photography, cinematic lighting, high detail, clean composition, 4k"
+      : "realistic documentary photo, clean composition";
 
+  const labels = (p?.gridLabels || ["玉米", "小麦", "柑橘", "番茄大棚"]) as [
+    string,
+    string,
+    string,
+    string,
+  ];
+
+  // NOTE: prompts are demo-only and not product-specific in a strict sense;
+  // we use labels to vary scenes so the pipeline feels configurable.
   const prompts = {
     hero: `A warm, documentary-style photo: a smiling agronomist holding a 20kg liquid fertilizer bucket in a greenhouse, healthy green crops in the background, shallow depth of field, ${q}, no text, no watermark.`,
-    crop1: `A thriving corn field, deep green leaves, sunlight, shallow depth of field, ${q}, no text.`,
-    crop2: `A healthy wheat field at early growth stage, uniform growth, warm sunlight, ${q}, no text.`,
-    crop3: `A citrus orchard with healthy glossy leaves and fruits, warm tone, ${q}, no text.`,
-    crop4: `Inside a greenhouse with tomato plants, lush growth, irrigation lines visible, ${q}, no text.`,
+    crop1: `A realistic agriculture photo about ${labels[0]} growing scenario, warm sunlight, shallow depth of field, ${q}, no text.`,
+    crop2: `A realistic agriculture photo about ${labels[1]} growing scenario, warm sunlight, shallow depth of field, ${q}, no text.`,
+    crop3: `A realistic agriculture photo about ${labels[2]} growing scenario, warm tone, shallow depth of field, ${q}, no text.`,
+    crop4: `A realistic agriculture photo about ${labels[3]} growing scenario, greenhouse / field context as appropriate, ${q}, no text.`,
     product: `A clean product hero photo: a 20kg liquid fertilizer bucket standing on soil in a greenhouse, soft natural light, ${q}, no text, no watermark.`,
   };
 
@@ -84,12 +98,7 @@ export async function POST(req: Request) {
 
   const gridText = {
     heading: "适用作物 / 场景",
-    items: (p?.gridLabels || ["玉米", "小麦", "柑橘", "番茄大棚"]) as [
-      string,
-      string,
-      string,
-      string,
-    ],
+    items: labels,
     compliance,
   };
 
@@ -133,7 +142,7 @@ export async function POST(req: Request) {
     actor: "demo-user",
     qualityPreset: quality,
     costCny: quality === "hq" ? 8.0 : 4.0,
-    inputSummary: `${p?.name || "产品"}｜模板：${templateIds.join(",")}｜档位：${quality}`,
+    inputSummary: `${p?.name || "产品"}｜productId:${pid}｜模板：${templateIds.join(",")}｜档位：${quality}`,
     outputSummary: `产物：${outputs
       .map((o) => `${o.templateId}(grid4+benefits)`)
       .join(" ")}`,

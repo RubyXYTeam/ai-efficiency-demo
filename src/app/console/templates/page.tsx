@@ -41,7 +41,7 @@ export default function ConsoleTemplatesPage() {
       const res = await fetch("/api/workflows/wf01/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ qualityPreset: quality, templateIds: ["T1", "T2", "T3"] }),
+        body: JSON.stringify({ productId, qualityPreset: quality, templateIds: ["T1", "T2", "T3"] }),
       });
       const j = await res.json();
       if (!res.ok) throw new Error(j?.error || `HTTP ${res.status}`);
