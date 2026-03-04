@@ -64,8 +64,8 @@ export default function Wf04Page() {
       const rj = await rr.json();
       if (!rr.ok) throw new Error(rj?.error || `HTTP ${rr.status}`);
       setMd(rj.markdown || "");
-    } catch (e: any) {
-      setErr(e?.message || String(e));
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }

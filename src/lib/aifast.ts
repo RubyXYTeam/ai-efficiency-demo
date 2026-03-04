@@ -57,7 +57,7 @@ export async function aifastImageFromPrompt(prompt: string, model?: string) {
   };
 
   const maxAttempts = 3;
-  let lastErr: any = null;
+  let lastErr: unknown = null;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const controller = new AbortController();
@@ -84,7 +84,7 @@ export async function aifastImageFromPrompt(prompt: string, model?: string) {
       const m0 = content.match(/data:image\/png;base64,([A-Za-z0-9+/=]+)/);
       if (!m0) throw new Error("No base64 png found in response");
       return Buffer.from(m0[1], "base64");
-    } catch (e: any) {
+    } catch (e: unknown) {
       lastErr = e;
       // small backoff
       await new Promise((r) => setTimeout(r, 600 * attempt));
@@ -93,5 +93,5 @@ export async function aifastImageFromPrompt(prompt: string, model?: string) {
     }
   }
 
-  throw lastErr || new Error("aifast image failed");
+  throw (lastErr instanceof Error ? lastErr : new Error(String(lastErr || "aifast image failed")));
 }

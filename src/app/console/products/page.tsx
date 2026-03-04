@@ -27,8 +27,9 @@ export default function ConsoleProductsPage() {
     (async () => {
       const res = await fetch("/api/console/products");
       const j = await res.json();
-      setProducts(j.products || []);
-      setActiveId(j.products?.[0]?.id || "");
+      const list: Product[] = (j.products || []) as Product[];
+      setProducts(list);
+      setActiveId(list?.[0]?.id || "");
     })();
   }, []);
 
@@ -51,8 +52,8 @@ export default function ConsoleProductsPage() {
       const next = products.map((p) => (p.id === j.product.id ? j.product : p));
       setProducts(next);
       setMsg("已保存（内存态，重启会清空）");
-    } catch (e: any) {
-      setMsg(`保存失败：${e?.message || String(e)}`);
+    } catch (e: unknown) {
+      setMsg(`保存失败：${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setSaving(false);
     }

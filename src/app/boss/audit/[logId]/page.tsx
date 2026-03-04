@@ -69,7 +69,7 @@ export default async function BossAuditDetailPage({
           <div className="text-xs text-slate-400">DLP 命中（强脱敏）</div>
           {a.dlpHits?.length ? (
             <ul className="mt-2 list-disc pl-5 text-sm text-slate-100 space-y-1">
-              {a.dlpHits.map((h: any, idx: number) => (
+              {a.dlpHits.map((h, idx: number) => (
                 <li key={idx}>
                   <span className="font-semibold">[{h.severity}]</span> {h.ruleName}（pattern: {h.pattern}）
                 </li>

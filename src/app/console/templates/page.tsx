@@ -46,8 +46,8 @@ export default function ConsoleTemplatesPage() {
       const j = await res.json();
       if (!res.ok) throw new Error(j?.error || `HTTP ${res.status}`);
       setMsg(`WF‑01 已生成：${j.base}`);
-    } catch (e: any) {
-      setMsg(`WF‑01 失败：${e?.message || String(e)}`);
+    } catch (e: unknown) {
+      setMsg(`WF‑01 失败：${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setLoading(null);
     }
@@ -65,8 +65,8 @@ export default function ConsoleTemplatesPage() {
       const j = await res.json();
       if (!res.ok) throw new Error(j?.error || `HTTP ${res.status}`);
       setMsg(`WF‑02 已生成：${j.url}`);
-    } catch (e: any) {
-      setMsg(`WF‑02 失败：${e?.message || String(e)}`);
+    } catch (e: unknown) {
+      setMsg(`WF‑02 失败：${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setLoading(null);
     }

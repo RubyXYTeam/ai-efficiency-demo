@@ -75,8 +75,8 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ runId: run.id });
-  } catch (e: any) {
-    const msg = e?.message || String(e);
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
     updateRun(run.id, { status: "failed", error: msg });
     const audit = addAudit({
       workflowId: "wf04_customer_brief",

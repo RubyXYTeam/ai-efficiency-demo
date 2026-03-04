@@ -1,4 +1,4 @@
-import { PDFDocument, rgb } from "pdf-lib";
+import { PDFDocument, type PDFPage, rgb } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import fs from "fs";
 
@@ -70,7 +70,7 @@ export async function buildWf02Pdf(input: Wf02Input) {
     return page;
   }
 
-  function header(page: any, title: string, subtitle?: string) {
+  function header(page: PDFPage, title: string, subtitle?: string) {
     page.drawText(title, { x: 48, y: H - 88, size: 26, font: fontBold, color: theme.text });
     if (subtitle) {
       page.drawText(subtitle, { x: 48, y: H - 114, size: 12, font, color: theme.sub });
@@ -78,7 +78,7 @@ export async function buildWf02Pdf(input: Wf02Input) {
     page.drawLine({ start: { x: 48, y: H - 132 }, end: { x: W - 48, y: H - 132 }, thickness: 1, color: theme.line });
   }
 
-  function footer(page: any, compliance: string) {
+  function footer(page: PDFPage, compliance: string) {
     const lines = wrapText(compliance, 44).slice(0, 2);
     page.drawLine({ start: { x: 48, y: 72 }, end: { x: W - 48, y: 72 }, thickness: 1, color: theme.line });
     page.drawText(lines[0] || "", { x: 48, y: 52, size: 9, font, color: theme.sub });

@@ -10,7 +10,10 @@ type Product = {
 
 export default function Wf01Page() {
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<any>(null);
+  type Output = { templateId: "T1" | "T2" | "T3"; grid4: string; benefits: string };
+  type Resp = { ok: boolean; quality: string; base: string; outputs: Output[] };
+
+  const [data, setData] = useState<Resp | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   const [products, setProducts] = useState<Product[]>([]);
@@ -25,7 +28,10 @@ export default function Wf01Page() {
     (async () => {
       const res = await fetch("/api/console/products");
       const j = await res.json();
-      const list = (j.products || []).map((p: any) => ({ id: p.id, name: p.name }));
+      const list: Product[] = (j.products || []).map((p: unknown) => {
+        const x = p as { id?: unknown; name?: unknown };
+        return { id: String(x.id || ""), name: String(x.name || "") };
+      });
       setProducts(list);
       if (list?.[0]?.id) setProductId(list[0].id);
     })();
@@ -48,9 +54,9 @@ export default function Wf01Page() {
       });
       const j = await res.json();
       if (!res.ok) throw new Error(j?.error || `HTTP ${res.status}`);
-      setData(j);
-    } catch (e: any) {
-      setErr(e?.message || String(e));
+      setData(j as Resp);
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
@@ -139,7 +145,7 @@ export default function Wf01Page() {
 
         {data?.outputs?.length ? (
           <div className="mt-8 space-y-10">
-            {data.outputs.map((o: any) => (
+            {data.outputs.map((o) => (
               <div key={o.templateId} className="rounded-2xl border border-slate-700/60 bg-slate-900/30 p-5">
                 <div className="text-sm font-semibold">模板 {o.templateId}</div>
                 <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">

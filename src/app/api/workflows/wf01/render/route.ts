@@ -39,7 +39,7 @@ export async function POST() {
   const outDir = path.join(process.cwd(), "public", "artifacts", "wf01");
   fs.mkdirSync(outDir, { recursive: true });
 
-  const outputs: any[] = [];
+  const outputs: Array<{ templateId: "T1" | "T2" | "T3"; grid4: string; benefits: string }> = [];
 
   for (const tid of ["T1", "T2", "T3"] as const) {
     const grid = await renderGrid4(tid, { a, b, c, d }, gridText);

@@ -21,7 +21,10 @@ export default function Wf02Page() {
     (async () => {
       const res = await fetch("/api/console/products");
       const j = await res.json();
-      const list = (j.products || []).map((p: any) => ({ id: p.id, name: p.name }));
+      const list: Product[] = (j.products || []).map((p: unknown) => {
+        const x = p as { id?: unknown; name?: unknown };
+        return { id: String(x.id || ""), name: String(x.name || "") };
+      });
       setProducts(list);
       if (list?.[0]?.id) setProductId(list[0].id);
     })();
@@ -40,8 +43,8 @@ export default function Wf02Page() {
       const j = await res.json();
       if (!res.ok) throw new Error(j?.error || `HTTP ${res.status}`);
       setUrl(j.url);
-    } catch (e: any) {
-      setErr(e?.message || String(e));
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }

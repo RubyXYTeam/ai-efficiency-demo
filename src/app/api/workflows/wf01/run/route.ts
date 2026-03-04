@@ -102,7 +102,7 @@ export async function POST(req: Request) {
     compliance,
   };
 
-  const outputs: any[] = [];
+  const outputs: Array<{ templateId: "T1" | "T2" | "T3"; grid4: string; benefits: string }> = [];
   for (const tid of templateIds) {
     const grid = await renderGrid4(tid, { a, b, c, d }, gridText);
     const benefits = await renderBenefits(tid, product, text);
