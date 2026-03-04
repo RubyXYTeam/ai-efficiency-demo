@@ -29,8 +29,12 @@ export async function buildWf02Pdf(input: Wf02Input) {
   pdf.registerFontkit(fontkit);
 
   // Use a CJK-capable font to avoid WinAnsi encoding errors for Chinese.
-  // Prefer PingFang; fallback to STHeiti.
+  // Prefer single-font TTF/OTF first (more reliable with pdf-lib+fontkit).
+  // TTC collections (e.g., PingFang.ttc) may fail with `this.font.layout is not a function`.
   const candidates = [
+    "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
+    "/System/Library/Fonts/Supplemental/NISC18030.ttf",
+    // Fallback to TTC collections if nothing else exists.
     "/System/Library/Fonts/PingFang.ttc",
     "/System/Library/Fonts/STHeiti Medium.ttc",
     "/System/Library/Fonts/STHeiti Light.ttc",
