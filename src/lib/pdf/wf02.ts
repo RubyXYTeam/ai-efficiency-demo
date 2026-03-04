@@ -8,6 +8,12 @@ export type Wf02Input = {
   bullets: string[];
   compliance: string;
   sections?: Array<{ heading: string; body: string[] }>;
+  // Optional images (PNG/JPEG) to enrich the PDF.
+  images?: {
+    hero?: Uint8Array;
+    product?: Uint8Array;
+    crops4?: [Uint8Array, Uint8Array, Uint8Array, Uint8Array];
+  };
 };
 
 function wrapText(text: string, maxLen = 26) {
@@ -89,31 +95,62 @@ export async function buildWf02Pdf(input: Wf02Input) {
     if (lines[1]) page.drawText(lines[1], { x: 48, y: 40, size: 9, font, color: theme.sub });
   }
 
-  // Page 1: cover
+  // Embed images (best-effort)
+  const img = input.images || {};
+  const heroImg = img.hero ? await pdf.embedPng(img.hero) : null;
+  const productImg = img.product ? await pdf.embedPng(img.product) : null;
+  const crops4Img = img.crops4
+    ? await Promise.all(img.crops4.map((b) => pdf.embedPng(b)))
+    : null;
+
+  // Page 1: cover (hero)
   {
     const page = pageBase();
-    page.drawRectangle({ x: 48, y: 160, width: W - 96, height: H - 280, color: theme.card, borderColor: theme.line, borderWidth: 1 });
-    page.drawText("产品画册（Demo）", { x: 72, y: H - 210, size: 14, font: fontBold, color: theme.sub });
-    page.drawText(input.title, { x: 72, y: H - 260, size: 34, font: fontBold, color: theme.text });
-    page.drawText(input.subtitle, { x: 72, y: H - 292, size: 14, font, color: theme.sub });
 
-    page.drawText("结构：封面/概览/卖点/场景/注意事项/话术页", { x: 72, y: 200, size: 11, font, color: theme.sub });
+    // Hero background image (top)
+    if (heroImg) {
+      const w = W - 96;
+      const h = 360;
+      page.drawImage(heroImg, { x: 48, y: H - 48 - h, width: w, height: h, opacity: 0.95 });
+      // overlay dark gradient-ish block
+      page.drawRectangle({ x: 48, y: H - 48 - h, width: w, height: h, color: rgb(0, 0, 0), opacity: 0.25 });
+    } else {
+      page.drawRectangle({ x: 48, y: H - 420, width: W - 96, height: 360, color: theme.card, borderColor: theme.line, borderWidth: 1 });
+    }
+
+    page.drawText("产品画册（Demo）", { x: 72, y: H - 120, size: 14, font: fontBold, color: theme.sub });
+    page.drawText(input.title, { x: 72, y: H - 170, size: 34, font: fontBold, color: theme.text });
+    page.drawText(input.subtitle, { x: 72, y: H - 202, size: 14, font, color: theme.sub });
+
+    page.drawRectangle({ x: 48, y: 160, width: W - 96, height: 120, color: theme.card, borderColor: theme.line, borderWidth: 1 });
+    page.drawText("结构：封面/概览/卖点/场景/注意事项/话术页", { x: 72, y: 240, size: 11, font, color: theme.sub });
+    page.drawText("（图文版：图片按内容自动匹配/复用）", { x: 72, y: 220, size: 11, font, color: theme.sub });
+
     footer(page, input.compliance);
   }
 
-  // Page 2: overview
+  // Page 2: overview (product image)
   {
     const page = pageBase();
     header(page, "概览", input.title);
-    page.drawText("一句话价值：", { x: 48, y: H - 180, size: 13, font: fontBold, color: theme.text });
-    page.drawText("提升销售沟通效率，保证合规表述可追溯。", { x: 48, y: H - 205, size: 12, font, color: theme.sub });
 
-    page.drawRectangle({ x: 48, y: H - 410, width: W - 96, height: 180, color: theme.card, borderColor: theme.line, borderWidth: 1 });
-    page.drawText("适用人群", { x: 72, y: H - 250, size: 12, font: fontBold, color: theme.text });
-    page.drawText("销售 / 渠道 / 农技 / 运营（Demo）", { x: 72, y: H - 272, size: 11, font, color: theme.sub });
+    // left: product image
+    if (productImg) {
+      const boxW = 220;
+      const boxH = 220;
+      page.drawRectangle({ x: 48, y: H - 410, width: boxW, height: boxH, color: theme.card, borderColor: theme.line, borderWidth: 1 });
+      page.drawImage(productImg, { x: 58, y: H - 400, width: boxW - 20, height: boxH - 20 });
+    }
 
-    page.drawText("交付物", { x: 72, y: H - 312, size: 12, font: fontBold, color: theme.text });
-    page.drawText("1) 详情图（T1/T2/T3）  2) 画册PDF  3) 拜访清单Markdown", { x: 72, y: H - 334, size: 11, font, color: theme.sub });
+    page.drawText("一句话价值：", { x: 290, y: H - 180, size: 13, font: fontBold, color: theme.text });
+    page.drawText("提升销售沟通效率，保证合规表述可追溯。", { x: 290, y: H - 205, size: 12, font, color: theme.sub });
+
+    page.drawRectangle({ x: 290, y: H - 410, width: W - 338, height: 180, color: theme.card, borderColor: theme.line, borderWidth: 1 });
+    page.drawText("适用人群", { x: 310, y: H - 250, size: 12, font: fontBold, color: theme.text });
+    page.drawText("销售 / 渠道 / 农技 / 运营（Demo）", { x: 310, y: H - 272, size: 11, font, color: theme.sub });
+
+    page.drawText("交付物", { x: 310, y: H - 312, size: 12, font: fontBold, color: theme.text });
+    page.drawText("1) 详情图（T1/T2/T3）  2) 画册PDF  3) 拜访清单Markdown", { x: 310, y: H - 334, size: 11, font, color: theme.sub });
 
     footer(page, input.compliance);
   }
@@ -123,8 +160,15 @@ export async function buildWf02Pdf(input: Wf02Input) {
     const page = pageBase();
     header(page, "核心卖点", input.title);
 
+    if (productImg) {
+      const w = W - 96;
+      const h = 140;
+      page.drawRectangle({ x: 48, y: H - 220, width: w, height: h, color: theme.card, borderColor: theme.line, borderWidth: 1 });
+      page.drawImage(productImg, { x: 48 + 10, y: H - 220 + 10, width: w - 20, height: h - 20 });
+    }
+
     const bullets = (input.bullets || []).slice(0, 6);
-    let y = H - 190;
+    let y = H - 260;
     for (const b of bullets) {
       page.drawRectangle({ x: 48, y: y - 26, width: W - 96, height: 36, color: theme.card, borderColor: theme.line, borderWidth: 1 });
       page.drawText("• " + b, { x: 64, y: y - 12, size: 12, font: fontBold, color: theme.text });
@@ -150,9 +194,16 @@ export async function buildWf02Pdf(input: Wf02Input) {
       const x = 48 + col * (boxW + 18);
       const y = startY - row * (boxH + 18);
       page.drawRectangle({ x, y: y - boxH, width: boxW, height: boxH, color: theme.card, borderColor: theme.line, borderWidth: 1 });
-      page.drawText(items[i] ? `场景 ${i + 1}` : "-", { x: x + 18, y: y - 34, size: 11, font: fontBold, color: theme.sub });
-      page.drawText(items[i] || "-", { x: x + 18, y: y - 64, size: 18, font: fontBold, color: theme.text });
-      page.drawText("建议话术：按说明使用，因地制宜。", { x: x + 18, y: y - 92, size: 10, font, color: theme.sub });
+
+      // image area
+      if (crops4Img?.[i]) {
+        page.drawImage(crops4Img[i], { x: x + 10, y: y - 10 - 96, width: boxW - 20, height: 96 });
+        page.drawRectangle({ x: x + 10, y: y - 10 - 96, width: boxW - 20, height: 96, borderColor: theme.line, borderWidth: 1, opacity: 0 });
+      }
+
+      page.drawText(items[i] ? `场景 ${i + 1}` : "-", { x: x + 18, y: y - 122, size: 11, font: fontBold, color: theme.sub });
+      page.drawText(items[i] || "-", { x: x + 18, y: y - 148, size: 16, font: fontBold, color: theme.text });
+      page.drawText("建议话术：按说明使用，因地制宜。", { x: x + 18, y: y - 168, size: 10, font, color: theme.sub });
     }
 
     footer(page, input.compliance);
@@ -196,7 +247,7 @@ export async function buildWf02Pdf(input: Wf02Input) {
       },
       {
         h: "收口",
-        b: "我们会把‘需验证项’列出来，下次带着数据再对齐，不做口头承诺。",
+        b: "我们会把'需验证项'列出来，下次带着数据再对齐，不做口头承诺。",
       },
     ];
 

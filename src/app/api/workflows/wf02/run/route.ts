@@ -29,12 +29,26 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "product not found" }, { status: 404 });
     }
 
+    // V1 图文版：复用 public/demo/aifast 下的示例图片（稳定可交付）
+    const demoDir = path.join(process.cwd(), "public", "demo", "aifast");
+    const images = {
+      hero: fs.readFileSync(path.join(demoDir, "hero.png")),
+      product: fs.readFileSync(path.join(demoDir, "benefits_product.png")),
+      crops4: [
+        fs.readFileSync(path.join(demoDir, "grid_crop_01.png")),
+        fs.readFileSync(path.join(demoDir, "grid_crop_02.png")),
+        fs.readFileSync(path.join(demoDir, "grid_crop_03.png")),
+        fs.readFileSync(path.join(demoDir, "grid_crop_04.png")),
+      ] as [Buffer, Buffer, Buffer, Buffer],
+    };
+
     const pdfBuf = await buildWf02Pdf({
       title: p.name,
       subtitle: p.subtitle,
       bullets: p.bullets,
       compliance: p.compliance,
       sections: [{ heading: "场景", body: [...p.gridLabels] }],
+      images,
     });
 
     const outBase = path.join(process.cwd(), "public", "artifacts", "wf02", nowId());
