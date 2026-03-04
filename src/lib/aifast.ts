@@ -8,12 +8,12 @@ export async function aifastChatCompletion(
   model?: string
 ) {
   const baseUrl = process.env.AIFAST_BASE_URL;
-  const apiKey = process.env.AIFAST_API_KEY;
+  const apiKey = process.env.AIFAST_TEXT_API_KEY || process.env.AIFAST_API_KEY;
   const primary = model || process.env.AIFAST_TEXT_MODEL;
   const fallback = process.env.AIFAST_TEXT_MODEL_FALLBACK;
 
   if (!baseUrl) throw new Error("AIFAST_BASE_URL missing");
-  if (!apiKey) throw new Error("AIFAST_API_KEY missing");
+  if (!apiKey) throw new Error("AIFAST_TEXT_API_KEY/AIFAST_API_KEY missing");
   if (!primary) throw new Error("AIFAST_TEXT_MODEL missing");
 
   async function call(m: string) {
@@ -52,11 +52,11 @@ export async function aifastChatCompletion(
 
 export async function aifastImageFromPrompt(prompt: string, model?: string) {
   const baseUrl = process.env.AIFAST_BASE_URL;
-  const apiKey = process.env.AIFAST_API_KEY;
+  const apiKey = process.env.AIFAST_IMAGE_API_KEY || process.env.AIFAST_API_KEY;
   const m = model || process.env.AIFAST_IMAGE_MODEL;
 
   if (!baseUrl) throw new Error("AIFAST_BASE_URL missing");
-  if (!apiKey) throw new Error("AIFAST_API_KEY missing");
+  if (!apiKey) throw new Error("AIFAST_IMAGE_API_KEY/AIFAST_API_KEY missing");
   if (!m) throw new Error("AIFAST_IMAGE_MODEL missing");
 
   const body = {
