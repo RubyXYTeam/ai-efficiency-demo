@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Efficiency Demo (AI‑CoE)
 
-## Getting Started
+一个可演示的「企业 AI 效能中枢」Demo：员工端工作流一键产出交付物 → 全程审计 → 老板端驾驶舱聚合（近 7 天：成本 / 产量 / 风险）。
 
-First, run the development server:
+Repo: https://github.com/RubyXYTeam/ai-efficiency-demo
 
+---
+
+## 1) Quick Start
+
+### Requirements
+- Node.js 20+（本项目当前在本机 Node 22 通过）
+
+### Install
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm i
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Run (dev)
+> 默认端口 3010（避免占用 3000/3001）。如果 3010 被占用，请修改启动命令或换端口。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run dev -- --port 3010
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Open:
+- Login： http://localhost:3010/login
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 2) Demo Routes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 员工端（WorkBench）
+- 工作台：`/employee/workbench`
+- WF‑01 一键出商品详情图：`/employee/workbench/wf01`
+- WF‑02 产品画册（PDF）：`/employee/workbench/wf02`
+- WF‑04+ 客户业务理解（1分钟清单）：`/employee/workbench/wf04`
+- WF‑05 售前拜访助手（更全版）：`/employee/workbench/wf05`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 老板端（Boss）
+- 驾驶舱 / 效能座舱（近 7 天聚合）：`/boss/dashboard`
+- 审计列表（强脱敏摘要）：`/boss/audit`
 
-## Deploy on Vercel
+### 顾问端（Console）
+- Console 首页：`/console`
+- 产品库（Demo）：`/console/products`
+- DLP（Demo）：`/console/dlp`
+- 模板下发中心（Demo）：`/console/templates`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 3) Data & Persistence (Demo)
+
+为便于演示，审计日志 / runs / 客户别名默认会落盘到：
+- `./.data/store.json`
+
+该目录已加入 `.gitignore`，不会提交到仓库。
+
+---
+
+## 4) What’s Next (Roadmap)
+
+- 老板看板“一页式可复制摘要”（周会/晨会一键复制）
+- 自动检索（优先 grok/gork）与引用标注
+- DLP 命中统计接入座舱（按天/按规则/按工作流）
+- 权限壳（角色/导航控制/假登录）
+- WF‑01 稳定性（队列/重试/并发限制）
+
+---
+
+## Notes
+
+- 这是演示工程：默认不做真实鉴权；老板端仅展示强脱敏摘要。
+- 若出现端口占用：请换端口启动，或关闭已占用端口的进程。
