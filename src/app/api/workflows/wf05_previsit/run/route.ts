@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { aifastChatCompletion } from "@/lib/aifast";
 import { addAudit, createRun, getCustomerAlias, updateRun } from "@/lib/store";
 import { dlpScan } from "@/lib/dlp";
+import { buildWf05PrevisitTemplate } from "@/lib/templates";
 
 export const runtime = "nodejs";
 
@@ -126,20 +127,56 @@ J) 合规与禁区（>=8条）：尤其注意招采合规、价格、承诺、�
 
     return NextResponse.json({ runId: run.id });
   } catch (e: unknown) {
+    // Fallback: stable rule-based template so demo doesn't block on model availability.
     const msg = e instanceof Error ? e.message : String(e);
-    updateRun(run.id, { status: "failed", error: msg });
+
+    const md = buildWf05PrevisitTemplate({
+      customerName: body.customer_name,
+      industry: body.industry,
+      visitRole: body.visit_role,
+      visitGoal: body.visit_goal,
+      ourOffer: body.our_offer_one_liner,
+      knownFacts: body.known_facts,
+      constraints: body.constraints,
+    });
+
+    const outputSummary = summarize(md, 220);
+    const hits = dlpScan(
+      [
+        body.customer_name,
+        body.industry,
+        body.visit_role,
+        body.visit_goal,
+        body.our_offer_one_liner,
+        body.known_facts,
+        body.reference_links,
+        body.constraints,
+        md,
+      ]
+        .filter(Boolean)
+        .join("\n\n")
+    );
+    const risky = hits.some((h) => h.severity === "high") || hits.length >= 3;
+
     const audit = addAudit({
       workflowId: "wf05_previsit",
       dept: "销售部",
       actor: "demo-user",
       qualityPreset: body.quality_preset,
-      costCny,
+      costCny: 0.2,
       inputSummary,
-      outputSummary: "生成失败（已脱敏）",
+      outputSummary: `${outputSummary}\n\n（fallback: ${summarize(msg, 120)}）`,
       customerAlias: alias,
-      risky: false,
+      risky,
+      dlpHits: hits,
     });
-    updateRun(run.id, { auditLogId: audit.id });
-    return NextResponse.json({ runId: run.id, error: msg }, { status: 500 });
+
+    updateRun(run.id, {
+      status: "succeeded",
+      markdown: md,
+      auditLogId: audit.id,
+    });
+
+    return NextResponse.json({ runId: run.id, fallback: true });
   }
 }
