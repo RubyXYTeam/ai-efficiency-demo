@@ -75,6 +75,12 @@ export default function WorkbenchPage() {
             href="/employee/workbench/wf04"
             badge="Text"
           />
+          <Card
+            title="WF‑05 售前拜访助手（更全版）"
+            desc="高校/研究机构 · 生命科学仪器采购：业务理解→竞品替代→目标拆解→分角色提问→话术→纪要+CRM。"
+            href="/employee/workbench/wf05"
+            badge="Text"
+          />
         </div>
 
         <div className="mt-10 rounded-2xl border border-slate-700/60 bg-slate-900/30 p-5 text-xs text-slate-400">
