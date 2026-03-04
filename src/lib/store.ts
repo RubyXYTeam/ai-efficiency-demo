@@ -6,7 +6,8 @@ export type WorkflowId =
   | "wf01_product_images"
   | "wf02_catalog_pdf"
   | "wf04_customer_brief"
-  | "wf05_previsit";
+  | "wf05_previsit"
+  | "wf06_promo_video";
 
 export type RunStatus = "queued" | "running" | "succeeded" | "failed";
 

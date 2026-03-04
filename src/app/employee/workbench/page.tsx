@@ -81,6 +81,12 @@ export default function WorkbenchPage() {
             href="/employee/workbench/wf05"
             badge="Text"
           />
+          <Card
+            title="WF‑06 产品宣传片（15秒）"
+            desc="输入产品卖点 → 自动生成 15 秒 16:9 科技插画风宣传片（可预览/下载，写审计）。"
+            href="/employee/workbench/wf06"
+            badge="Video"
+          />
         </div>
 
         <div className="mt-10 rounded-2xl border border-slate-700/60 bg-slate-900/30 p-5 text-xs text-slate-400">
