@@ -29,16 +29,75 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "product not found" }, { status: 404 });
     }
 
-    // V1 图文版：复用 public/demo/aifast 下的示例图片（稳定可交付）
-    const demoDir = path.join(process.cwd(), "public", "demo", "aifast");
+    // V2 图文版：同一产品只生成一次配图，后续复用。
+    // - cache: public/artifacts/wf02_cache/<productId>/
+    // - output pdf: public/artifacts/wf02/<timestamp>/catalog.pdf
+    const cacheDir = path.join(process.cwd(), "public", "artifacts", "wf02_cache", productId);
+    ensureDir(cacheDir);
+
+    const cacheFiles = {
+      hero: path.join(cacheDir, "hero.png"),
+      product: path.join(cacheDir, "product.png"),
+      crop1: path.join(cacheDir, "crop1.png"),
+      crop2: path.join(cacheDir, "crop2.png"),
+      crop3: path.join(cacheDir, "crop3.png"),
+      crop4: path.join(cacheDir, "crop4.png"),
+    };
+
+    const hasAll =
+      fs.existsSync(cacheFiles.hero) &&
+      fs.existsSync(cacheFiles.product) &&
+      fs.existsSync(cacheFiles.crop1) &&
+      fs.existsSync(cacheFiles.crop2) &&
+      fs.existsSync(cacheFiles.crop3) &&
+      fs.existsSync(cacheFiles.crop4);
+
+    if (!hasAll) {
+      const { aifastImageFromPrompt } = await import("@/lib/aifast");
+      const style =
+        "flat vector illustration, modern tech style, clean shapes, soft gradients, minimal, no text, no watermark, 4k";
+
+      const labels = (p.gridLabels || ["场景1", "场景2", "场景3", "场景4"]) as [
+        string,
+        string,
+        string,
+        string,
+      ];
+
+      const prompts = {
+        hero: `A cover illustration for ${p.name}: modern clean tech illustration, abstract background, product category vibe, ${style}.`,
+        product: `A product illustration of ${p.name}: centered object, clean lighting, studio vector style, ${style}.`,
+        crop1: `An application scenario illustration related to ${labels[0]} for ${p.name}, ${style}.`,
+        crop2: `An application scenario illustration related to ${labels[1]} for ${p.name}, ${style}.`,
+        crop3: `An application scenario illustration related to ${labels[2]} for ${p.name}, ${style}.`,
+        crop4: `An application scenario illustration related to ${labels[3]} for ${p.name}, ${style}.`,
+      };
+
+      const [hero, productImg, c1, c2, c3, c4] = await Promise.all([
+        aifastImageFromPrompt(prompts.hero),
+        aifastImageFromPrompt(prompts.product),
+        aifastImageFromPrompt(prompts.crop1),
+        aifastImageFromPrompt(prompts.crop2),
+        aifastImageFromPrompt(prompts.crop3),
+        aifastImageFromPrompt(prompts.crop4),
+      ]);
+
+      fs.writeFileSync(cacheFiles.hero, hero);
+      fs.writeFileSync(cacheFiles.product, productImg);
+      fs.writeFileSync(cacheFiles.crop1, c1);
+      fs.writeFileSync(cacheFiles.crop2, c2);
+      fs.writeFileSync(cacheFiles.crop3, c3);
+      fs.writeFileSync(cacheFiles.crop4, c4);
+    }
+
     const images = {
-      hero: fs.readFileSync(path.join(demoDir, "hero.png")),
-      product: fs.readFileSync(path.join(demoDir, "benefits_product.png")),
+      hero: fs.readFileSync(cacheFiles.hero),
+      product: fs.readFileSync(cacheFiles.product),
       crops4: [
-        fs.readFileSync(path.join(demoDir, "grid_crop_01.png")),
-        fs.readFileSync(path.join(demoDir, "grid_crop_02.png")),
-        fs.readFileSync(path.join(demoDir, "grid_crop_03.png")),
-        fs.readFileSync(path.join(demoDir, "grid_crop_04.png")),
+        fs.readFileSync(cacheFiles.crop1),
+        fs.readFileSync(cacheFiles.crop2),
+        fs.readFileSync(cacheFiles.crop3),
+        fs.readFileSync(cacheFiles.crop4),
       ] as [Buffer, Buffer, Buffer, Buffer],
     };
 

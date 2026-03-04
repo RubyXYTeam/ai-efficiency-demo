@@ -45,3 +45,6 @@ public/artifacts/
 
 # Local demo data (store persistence)
 /.data/
+
+# Keep cached WF02 images out of git
+public/artifacts/wf02_cache/
