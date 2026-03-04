@@ -9,32 +9,45 @@ export async function aifastChatCompletion(
 ) {
   const baseUrl = process.env.AIFAST_BASE_URL;
   const apiKey = process.env.AIFAST_API_KEY;
-  const m = model || process.env.AIFAST_TEXT_MODEL;
+  const primary = model || process.env.AIFAST_TEXT_MODEL;
+  const fallback = process.env.AIFAST_TEXT_MODEL_FALLBACK;
 
   if (!baseUrl) throw new Error("AIFAST_BASE_URL missing");
   if (!apiKey) throw new Error("AIFAST_API_KEY missing");
-  if (!m) throw new Error("AIFAST_TEXT_MODEL missing");
+  if (!primary) throw new Error("AIFAST_TEXT_MODEL missing");
 
-  const body: ChatCompletionReq = {
-    model: m,
-    messages,
-  };
+  async function call(m: string) {
+    const body: ChatCompletionReq = { model: m, messages };
 
-  const res = await fetch(`${baseUrl}/v1/chat/completions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
+    const res = await fetch(`${baseUrl}/v1/chat/completions`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
 
-  const text = await res.text();
-  if (!res.ok) {
-    throw new Error(`aifast chat error ${res.status}: ${text.slice(0, 500)}`);
+    const text = await res.text();
+    if (!res.ok) {
+      throw new Error(`aifast chat error ${res.status}: ${text.slice(0, 500)}`);
+    }
+
+    return JSON.parse(text);
   }
 
-  return JSON.parse(text);
+  try {
+    return await call(primary);
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    const shouldFallback =
+      !!fallback &&
+      fallback !== primary &&
+      (msg.includes("model_not_found") || msg.includes("No available channel"));
+
+    if (!shouldFallback) throw e;
+    return await call(fallback);
+  }
 }
 
 export async function aifastImageFromPrompt(prompt: string, model?: string) {
