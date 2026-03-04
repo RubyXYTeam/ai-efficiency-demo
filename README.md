@@ -17,11 +17,15 @@ npm i
 ```
 
 ### Run (dev)
-> 默认端口 3010（避免占用 3000/3001）。如果 3010 被占用，请修改启动命令或换端口。
+> 默认端口 3010（避免占用 3000/3001）。
 
 ```bash
-npm run dev -- --port 3010
+npm run dev:3010
 ```
+
+如果提示 `EADDRINUSE`（端口被占用）：
+- 换端口：`npm run dev -- --port 3011`
+- 或关闭占用 3010 的进程后再启动
 
 Open:
 - Login： http://localhost:3010/login
