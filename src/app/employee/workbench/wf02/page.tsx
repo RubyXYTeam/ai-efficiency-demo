@@ -40,9 +40,18 @@ export default function Wf02Page() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productId }),
       });
-      const j = await res.json();
-      if (!res.ok) throw new Error(j?.error || `HTTP ${res.status}`);
-      setUrl(j.url);
+
+      const raw = await res.text();
+      let j: unknown = null;
+      try {
+        j = raw ? JSON.parse(raw) : null;
+      } catch {
+        // non-json (e.g. HTML 500)
+      }
+
+      const jj = (j as { error?: unknown; url?: unknown } | null) || null;
+      if (!res.ok) throw new Error(String(jj?.error || raw || `HTTP ${res.status}`));
+      setUrl(String(jj?.url || ""));
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally {
