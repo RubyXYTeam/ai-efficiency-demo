@@ -76,6 +76,12 @@ export default function WorkbenchPage() {
             badge="Text"
           />
           <Card
+            title="已发布工作流（动态）"
+            desc="来自顾问端“工作流发布台”的已发布工作流：配置→发布→员工端立刻可用。"
+            href="/employee/workbench/published"
+            badge="New"
+          />
+          <Card
             title="WF‑05 售前拜访助手（更全版）"
             desc="高校/研究机构 · 生命科学仪器采购：业务理解→竞品替代→目标拆解→分角色提问→话术→纪要+CRM。"
             href="/employee/workbench/wf05"
