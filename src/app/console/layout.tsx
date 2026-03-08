@@ -54,6 +54,12 @@ export default function ConsoleLayout({
               >
                 模板库
               </Link>
+              <Link
+                href="/console/sales-workflows"
+                className="block rounded-xl border border-slate-700 bg-transparent px-3 py-2 text-sm hover:border-slate-400 transition"
+              >
+                售前工作流库
+              </Link>
             </nav>
 
             <div className="mt-6 rounded-xl border border-slate-800 bg-slate-950/30 p-3 text-xs text-slate-400">
