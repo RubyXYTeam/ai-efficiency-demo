@@ -55,10 +55,10 @@ export default function ConsoleLayout({
                 模板库
               </Link>
               <Link
-                href="/console/sales-workflows"
+                href="/console/publish"
                 className="block rounded-xl border border-slate-700 bg-transparent px-3 py-2 text-sm hover:border-slate-400 transition"
               >
-                售前工作流库
+                工作流发布台
               </Link>
             </nav>
 
