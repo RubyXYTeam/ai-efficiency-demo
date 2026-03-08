@@ -32,6 +32,8 @@ export type RunRecord = {
   workflowId: WorkflowId;
   status: RunStatus;
   markdown?: string;
+  artifactUrl?: string;
+  artifactType?: "pdf" | "video" | "images" | "text";
   auditLogId?: string;
   error?: string;
 };
@@ -153,6 +155,17 @@ export function updateRun(id: string, patch: Partial<RunRecord>) {
 
 export function getRun(id: string) {
   return runs.get(id) || null;
+}
+
+export function listRuns(opts?: { workflowId?: WorkflowId; limit?: number }) {
+  const limit = Math.max(1, Math.min(200, opts?.limit ?? 50));
+  const all = Array.from(runs.values()).sort(
+    (a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)
+  );
+  const filtered = opts?.workflowId
+    ? all.filter((r) => r.workflowId === opts.workflowId)
+    : all;
+  return filtered.slice(0, limit);
 }
 
 export function addAudit(log: Omit<AuditLog, "id" | "createdAt">) {

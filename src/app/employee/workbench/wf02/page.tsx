@@ -5,8 +5,58 @@ import { useEffect, useMemo, useState } from "react";
 
 type Product = { id: string; name: string };
 
+type Run = {
+  id: string;
+  createdAt: string;
+  status: "queued" | "running" | "succeeded" | "failed";
+  artifactUrl?: string;
+  error?: string;
+};
+
+function History({ workflowId }: { workflowId: string }) {
+  const [runs, setRuns] = useState<Run[]>([]);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const res = await fetch(`/api/runs?workflowId=${encodeURIComponent(workflowId)}&limit=20`);
+      const j = await res.json();
+      const list = (j?.runs || []) as Run[];
+      if (alive) setRuns(list);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [workflowId]);
+
+  if (!runs.length) return <div className="mt-3 text-xs text-slate-400">（暂无）</div>;
+
+  return (
+    <div className="mt-3 space-y-2">
+      {runs.map((r) => (
+        <div key={r.id} className="rounded-xl border border-slate-800 bg-slate-950/30 p-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-xs text-slate-400">{r.createdAt}</div>
+              <div className="mt-1 text-xs text-slate-200">{r.id}</div>
+            </div>
+            <div className="text-xs font-semibold text-slate-200">{r.status}</div>
+          </div>
+          {r.artifactUrl ? (
+            <a className="mt-2 inline-block text-xs text-slate-100 underline" href={r.artifactUrl} target="_blank" rel="noreferrer">
+              打开产物
+            </a>
+          ) : null}
+          {r.error ? <div className="mt-2 text-xs text-red-200">{r.error}</div> : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Wf02Page() {
   const [loading, setLoading] = useState(false);
+  const [runId, setRunId] = useState<string | null>(null);
   const [url, setUrl] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
@@ -34,6 +84,8 @@ export default function Wf02Page() {
     setLoading(true);
     setErr(null);
     setUrl(null);
+    setRunId(null);
+
     try {
       const res = await fetch("/api/workflows/wf02/run", {
         method: "POST",
@@ -46,12 +98,33 @@ export default function Wf02Page() {
       try {
         j = raw ? JSON.parse(raw) : null;
       } catch {
-        // non-json (e.g. HTML 500)
+        // ignore
       }
 
-      const jj = (j as { error?: unknown; url?: unknown } | null) || null;
+      const jj = (j as { error?: unknown; runId?: unknown } | null) || null;
       if (!res.ok) throw new Error(String(jj?.error || raw || `HTTP ${res.status}`));
-      setUrl(String(jj?.url || ""));
+
+      const rid = String(jj?.runId || "");
+      setRunId(rid);
+
+      // Poll status until done
+      for (let i = 0; i < 120; i++) {
+        await new Promise((r) => setTimeout(r, 1000));
+        const rr = await fetch(`/api/runs/${rid}`);
+        const rj = await rr.json();
+        const rjj = rj as { error?: unknown };
+        if (!rr.ok) throw new Error(String(rjj?.error || `HTTP ${rr.status}`));
+
+        if (rj.status === "succeeded") {
+          setUrl(String(rj.artifactUrl || ""));
+          return;
+        }
+        if (rj.status === "failed") {
+          throw new Error(String(rj.error || "生成失败"));
+        }
+      }
+
+      throw new Error("生成超时：仍在处理中（可稍后在老板端审计或刷新本页查看）");
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally {
@@ -115,6 +188,7 @@ export default function Wf02Page() {
             {loading ? "生成中…" : "生成PDF"}
           </button>
           {err ? <div className="text-xs text-red-200">失败：{err}</div> : null}
+          <div className="text-xs text-slate-400">runId：{runId || "-"}</div>
         </div>
 
         {url ? (
@@ -145,6 +219,12 @@ export default function Wf02Page() {
             />
           </div>
         ) : null}
+
+        <div className="mt-8 rounded-2xl border border-slate-700/60 bg-slate-900/30 p-6">
+          <div className="text-sm font-semibold">历史记录（最近20条）</div>
+          <div className="mt-1 text-xs text-slate-400">你可以离开页面，稍后回来查看生成结果。</div>
+          <History workflowId="wf02_catalog_pdf" />
+        </div>
       </div>
     </div>
   );

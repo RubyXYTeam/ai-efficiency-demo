@@ -101,44 +101,66 @@ export async function POST(req: Request) {
       ] as [Buffer, Buffer, Buffer, Buffer],
     };
 
-    const pdfBuf = await buildWf02Pdf({
-      title: p.name,
-      subtitle: p.subtitle,
-      bullets: p.bullets,
-      compliance: p.compliance,
-      sections: [{ heading: "场景", body: [...p.gridLabels] }],
-      images,
-    });
+    // Async mode: return runId immediately, continue generation in background
+    const { createRun, updateRun } = await import("@/lib/store");
+    const run = createRun("wf02_catalog_pdf");
+    updateRun(run.id, { status: "running" });
 
-    const outBase = path.join(process.cwd(), "public", "artifacts", "wf02", nowId());
-    ensureDir(outBase);
+    void (async () => {
+      try {
+        const pdfBuf = await buildWf02Pdf({
+          title: p.name,
+          subtitle: p.subtitle,
+          bullets: p.bullets,
+          compliance: p.compliance,
+          sections: [{ heading: "场景", body: [...p.gridLabels] }],
+          images,
+        });
 
-    const fileName = "catalog.pdf";
-    fs.writeFileSync(path.join(outBase, fileName), pdfBuf);
+        const outBase = path.join(process.cwd(), "public", "artifacts", "wf02", nowId());
+        ensureDir(outBase);
 
-    const hits = dlpScan(
-      [p.name, p.subtitle, p.bullets.join("\n"), p.gridLabels.join("\n"), p.compliance]
-        .filter(Boolean)
-        .join("\n\n")
-    );
-    const risky = hits.some((h) => h.severity === "high") || hits.length >= 3;
+        const fileName = "catalog.pdf";
+        fs.writeFileSync(path.join(outBase, fileName), pdfBuf);
 
-    const url = `/artifacts/wf02/${path.basename(outBase)}/${fileName}`;
+        const hits = dlpScan(
+          [p.name, p.subtitle, p.bullets.join("\n"), p.gridLabels.join("\n"), p.compliance]
+            .filter(Boolean)
+            .join("\n\n")
+        );
+        const risky = hits.some((h) => h.severity === "high") || hits.length >= 3;
 
-    addAudit({
-      workflowId: "wf02_catalog_pdf",
-      dept: "市场部",
-      actor: "demo-user",
-      qualityPreset: "standard",
-      costCny: 1.2,
-      inputSummary: `${p.name}｜画册PDF（6页）`,
-      outputSummary: `产物：catalog.pdf`,
-      customerAlias: "内部",
-      risky,
-      dlpHits: hits,
-    });
+        const url = `/artifacts/wf02/${path.basename(outBase)}/${fileName}`;
 
-    return NextResponse.json({ ok: true, url });
+        const audit = addAudit({
+          workflowId: "wf02_catalog_pdf",
+          dept: "市场部",
+          actor: "demo-user",
+          qualityPreset: "standard",
+          costCny: 1.2,
+          inputSummary: `${p.name}｜画册PDF（6页）`,
+          outputSummary: `产物：catalog.pdf`,
+          customerAlias: "内部",
+          risky,
+          dlpHits: hits,
+        });
+
+        updateRun(run.id, {
+          status: "succeeded",
+          artifactUrl: url,
+          artifactType: "pdf",
+          auditLogId: audit.id,
+          markdown: `PDF: ${url}`,
+        });
+      } catch (e: unknown) {
+        updateRun(run.id, {
+          status: "failed",
+          error: e instanceof Error ? e.message : String(e),
+        });
+      }
+    })();
+
+    return NextResponse.json({ ok: true, runId: run.id });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
     return NextResponse.json({ error: msg }, { status: 500 });
